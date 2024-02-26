@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "JwtService.Protos";
+
+package jwt;
+
+service OpenService {
+  rpc GetToken (User) returns (Reply);
+}
+
+message User {
+  string username = 1;
+  string password = 2;
+}
+
+message Reply {
+  string token = 1;
+}

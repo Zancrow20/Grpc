@@ -1,0 +1,15 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "TestService.Protos";
+
+import "google/protobuf/empty.proto";
+
+package test;
+
+service PrivateService {
+  rpc GetSecret (google.protobuf.Empty) returns (SecretReply);
+}
+
+message SecretReply {
+  string message = 1;
+}
