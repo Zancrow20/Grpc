@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "WeatherForecastProto.Grpc.Protos";
+
+import "google/protobuf/timestamp.proto";
+
+package weather_forecast;
+
+service WeatherForecast {
+  rpc GetWeatherForecast (WeatherForecastRequest) returns (stream WeatherForecastReply);
+}
+
+message WeatherForecastRequest {
+  float longitude = 1;
+  float latitude = 2;
+}
+
+message WeatherForecastReply {
+  double temperature = 1;
+  google.protobuf.Timestamp date = 2;
+}
