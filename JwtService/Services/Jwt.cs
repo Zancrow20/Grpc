@@ -14,7 +14,8 @@ public class Jwt : OpenService.OpenServiceBase
     private readonly IConfiguration _config;
     private static List<User> Users = new()
     {
-        new User(){ Username="123",Password="123"}
+        new User(){ Username="Ildar",Password="Islamov"},
+        new User(){Username = "Artur",Password = "Yakupov"}
     };
 
     public Jwt(ILogger<Jwt> logger, IConfiguration config)
