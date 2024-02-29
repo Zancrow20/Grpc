@@ -1,17 +1,26 @@
-﻿using Grpc.Core;
+﻿// See https://aka.ms/new-console-template for more information
+
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using Grpc.Net.Client;
-using WeatherForecastProto.Grpc.Protos;
+using JwtService.Protos;
+using TestService.Protos;
 
-using var channel = GrpcChannel.ForAddress("http://localhost:5092");
 
-var client = new WeatherForecast.WeatherForecastClient(channel);
- 
-var serverData = client.GetWeatherForecast(new WeatherForecastRequest {Longitude = 55.78f, Latitude = 49.12f});
- 
-var responseStream = serverData.ResponseStream;
+var channel = GrpcChannel.ForAddress("http://localhost:5124");
 
-await foreach(var reply in responseStream.ReadAllAsync())
+var client = new OpenService.OpenServiceClient(channel);
+
+var token = await client.GetTokenAsync(new User(){Password = "123", Username = "123"});
+
+var headers = new Metadata
 {
-    var now = TimeOnly.FromDateTime(DateTime.Now);
-    Console.WriteLine($"{now.Hour}.{now.Minute}.{now.Second} погода на {reply.Date.ToDateTime():dd.MM.yy HH:mm}");
-}
+    { "Authorization", $"Bearer {token.Token}" }
+};
+
+var privateClient = new PrivateService.PrivateServiceClient(channel);
+
+var reply = await privateClient.GetSecretAsync(
+    new Empty(), headers);
+
+Console.WriteLine(reply);

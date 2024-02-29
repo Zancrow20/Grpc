@@ -1,14 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc", "Grpc\Grpc.csproj", "{C70928D1-4E13-41B4-BF1C-00FBD11C2102}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{2A110CE8-1E72-4233-997C-B3ECB1A647CE}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jwt", "Jwt", "{E5C337B5-FEAD-4884-855C-EF78C07AB0B5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JwtService", "JwtService\JwtService.csproj", "{76CF2817-E44F-4093-94DE-D8C4CB2DD58B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JwtGrpcClient", "JwtGrpcClient\JwtGrpcClient.csproj", "{94A3F348-EEBA-4E6C-9BB3-AEB2267F0717}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\JwtGrpcClient.csproj", "{94A3F348-EEBA-4E6C-9BB3-AEB2267F0717}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
