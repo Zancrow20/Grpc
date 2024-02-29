@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
 using ChatServiceGrpc;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 
@@ -9,58 +10,56 @@ namespace JwtService.Services;
 [Authorize]
 public class ChatService : ChatServiceGrpc.ChatService.ChatServiceBase
 {
-    private static readonly ConcurrentDictionary<string, IServerStreamWriter<ReceiveMessage>> _chatRooms = new();
-    public override async Task ProccessConversation(IAsyncStreamReader<SendMessage> requestStream,
-        IServerStreamWriter<ReceiveMessage> responseStream,
-        ServerCallContext context)
-    {
-        var username = context.GetHttpContext().User.FindFirstValue(ClaimTypes.NameIdentifier);
-        while (!context.CancellationToken.IsCancellationRequested)
-        {
-            await JoinToChat(username!, responseStream);
-            var readTask = Task.Run(async () =>
-            {
-                await foreach (var message in requestStream.ReadAllAsync())
-                {
-                    var messageToSend = new ReceiveMessage() {Text = message.Text, Username = username};
-                    Console.WriteLine(messageToSend);
-                    await SendMessageToAll(messageToSend);
-                }
-            });
-            
-            await readTask;
-        }
+    private static readonly ConcurrentDictionary<string, IServerStreamWriter<PublishedMessage>> _usernameToReceiveStreamMapping = new();
 
-        await LeaveChat(username);
+
+    public override Task<Empty> SendMessage(Message request, ServerCallContext context)
+    {
+        //todo: client sends message
+        /*
+            var username = GetUserNameFromContext();
+            var ct = context.CancellationToken;
+            while (!ct.IsCancellationRequested)
+            {
+                await foreach (var message in requestStream.ReadAllAsync(ct))
+                {
+                    await SendMessageToAll(new ReceiveMessage() {Text = message.Text, Username = username});
+                }
+            
+            }
+        */
+        return base.SendMessage(request, context);
     }
 
-    private async Task SendMessageToAll(ReceiveMessage message)
+    public override Task SubscribeMessages(Empty request, IServerStreamWriter<PublishedMessage> responseStream, ServerCallContext context)
     {
-        if (_chatRooms.ContainsKey(message.Username))
+        //todo: client subscribes topic (main chat)
+        /*
+           var username = GetUserNameFromContext();
+           await JoinChat(username!, responseStream);
+           await Task.FromCanceled(stopping token)
+           await LeaveChat(username)
+         */
+        return base.SubscribeMessages(request, responseStream, context);
+    }
+
+    private async Task SendMessageToAll(PublishedMessage message)
+    {
+        if (_usernameToReceiveStreamMapping.ContainsKey(message.Username))
         {
-            var tasks = (from key in _chatRooms.Keys 
+            var tasks = (from key in _usernameToReceiveStreamMapping.Keys 
                 where key != message.Username 
-                select _chatRooms[key].WriteAsync(message)).ToList();
+                select _usernameToReceiveStreamMapping[key].WriteAsync(message)).ToList();
 
             await Task.WhenAll(tasks);
         }
     }
 
-    private Task JoinToChat(string username, IServerStreamWriter<ReceiveMessage> responseStream)
-    {
-        if (!_chatRooms.ContainsKey(username))
-        {
-            _chatRooms.AddOrUpdate(username,
-                _ => responseStream,
-                (_, _) => responseStream);
-        }
-
-        return Task.CompletedTask;
-    }
-    
     private Task LeaveChat(string username)
     {
-        _chatRooms.TryRemove(username, out _);
+        _usernameToReceiveStreamMapping.TryRemove(username, out _);
         return Task.CompletedTask;
     }
+
+    private string GetUserNameFromContext(ServerCallContext context) => context.GetHttpContext().User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }
