@@ -2,9 +2,32 @@ version: "3"
 
 services:
   envoy-for-chat:
+    container_name: grpc-web-proxy
     image: envoyproxy/envoy-dev:e4955aed5694f9935d674419dbb364e744f697b4
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
     ports:
       - "9901:9901"
       - "8080:8080"
+
+  backend:
+    build:
+      dockerfile: BackDockerfile
+    container_name: grpc-backend
+    environment:
+      - ASPNETCORE_URLS=http://+80
+      - Jwt__Key=ACDt1vR3lXToPQ1g3MyN12312312312312ewsedzca
+      - Jwt__Issuer=http://localhost:28747/
+      - Jwt__Audience=http://localhost:28747/
+    restart: always
+    ports:
+      - "5124:80"
+  
+  frontend:
+    build:
+      dockerfile: FrontDockerfile
+    container_name: grpc-frontend
+    environment:
+      - REACT_APP_ENVOY_HOST=http://localhost:8080
+    ports:
+      - "3000:3000"

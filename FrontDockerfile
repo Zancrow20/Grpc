@@ -1,0 +1,8 @@
+FROM node:latest
+WORKDIR /website
+COPY client/package.json .
+RUN npm install
+ARG REACT_APP_ENVOY_HOST
+ENV REACT_APP_ENVOY_HOST $REACT_APP_ENVOY_HOST
+COPY client .
+CMD ["npm", "start"]

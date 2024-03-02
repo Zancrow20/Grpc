@@ -7,7 +7,7 @@ import { User } from "../Protos/jwt_pb";
 export const getTokenFromStorage = () => sessionStorage.getItem("token");
 const setTokenToStorage = (token) => sessionStorage.setItem("token", token);
 
-const authClient = new OpenServiceClient("http://localhost:8080");//process.env.ENVOY_HOST);
+const authClient = new OpenServiceClient(process.env.REACT_APP_ENVOY_HOST);
 
 
 const AuthContext = createContext();
@@ -22,7 +22,7 @@ export const AuthWrapper = () => {
         request.setUsername(username);
         request.setPassword(password);
         
-        const reply = await authClient.getToken(request);
+        const reply = await authClient.getToken(request, (err) => { if (err) throw new Error()});
         const token = reply.getToken();
         
         setTokenToStorage(token);

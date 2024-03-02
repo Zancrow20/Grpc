@@ -9,9 +9,9 @@ export const LoginPage = () => {
     const [ error, setError ] = useState(null);
 
     async function tryGetToken() {
-        if(formData.login == "" || formData.password == "")
+        if(formData.login === "" || formData.password === "")
         {
-            setError("invalid login or password.");
+            setError("Неверный юзернейм или пароль");
             return;
         }
 
@@ -21,28 +21,28 @@ export const LoginPage = () => {
             navigator("/chat");
         }
         catch {
-            setError("error during request");
+            setError("Ошибка при входе.");
         }
     }
 
     return (
-        <div className="form-holder">
-            <h2>Sign Into Account</h2>
+        <div className="login-holder">
+            <h2>Войти в аккаунт</h2>
             <div className="inputs">
                 <div className="input">
                     <input type="text" maxLength="256" minLength="6" placeholder="username" required={true}
                            value={formData?.login} 
-                           onChange={(e) => setFormData({login: e.target.value?.trim()}) }/>
+                           onChange={(e) => {setError(""); setFormData({login: e.target.value?.trim()}) }}/>
                 </div>
                 <div className="input">
                      <input placeholder="password" type="password" required={true}
                            value={formData?.password} 
-                           onChange={(e) => setFormData({password: e.target.value?.trim()}) }/>
+                           onChange={(e) => {setError(""); setFormData({password: e.target.value?.trim()})}}/>
                 </div>
-                <div>
+                <div className="error">
                     {error}
                 </div>
-                <button onClick={tryGetToken}>Log in</button>
+                <button onClick={tryGetToken}>Войти</button>
             </div>
         </div>);
 }

@@ -19,7 +19,7 @@ public class ChatService : ChatServiceGrpc.ChatService.ChatServiceBase
         var username = GetUserNameFromContext(context);
         var ct = context.CancellationToken;
         if (!ct.IsCancellationRequested)
-            await SendMessageToAll(new PublishedMessage() {Text = request.Text, Username = username});   
+            await SendMessageToAllAsync(new PublishedMessage() {Text = request.Text, Username = username});   
         
         return new Empty();
     }
@@ -27,36 +27,25 @@ public class ChatService : ChatServiceGrpc.ChatService.ChatServiceBase
     public override async Task SubscribeMessages(Empty request, IServerStreamWriter<PublishedMessage> responseStream, ServerCallContext context)
     {
         var username = GetUserNameFromContext(context);
-        await JoinChat(username!, responseStream);
-        await Task.FromCanceled(context.CancellationToken);
-        await LeaveChat(username);
+        if (!_usernameToReceiveStreamMapping.TryAdd(username, responseStream))
+            return;
+
+        var ct = context.CancellationToken;
+        while (!ct.IsCancellationRequested)
+            await Task.Delay(500);
+
+        _usernameToReceiveStreamMapping.TryRemove(username, out _);
     }
 
-    private async Task SendMessageToAll(PublishedMessage message)
+    private Task SendMessageToAllAsync(PublishedMessage message)
     {
         if (_usernameToReceiveStreamMapping.ContainsKey(message.Username))
         {
-            var tasks = (from key in _usernameToReceiveStreamMapping.Keys 
-                where key != message.Username 
-                select _usernameToReceiveStreamMapping[key].WriteAsync(message)).ToList();
-
-            await Task.WhenAll(tasks);
-        }
-    }
-
-    private Task LeaveChat(string username)
-    {
-        _usernameToReceiveStreamMapping.TryRemove(username, out _);
-        return Task.CompletedTask;
-    }
-    
-    private Task JoinChat(string username, IServerStreamWriter<PublishedMessage> responseStream)
-    {
-        if (!_usernameToReceiveStreamMapping.ContainsKey(username))
-        {
-            _usernameToReceiveStreamMapping.AddOrUpdate(username,
-                _ => responseStream,
-                (_, _) => responseStream);
+            return Task.WhenAll(_usernameToReceiveStreamMapping
+                .Select(x => (Username: x.Key, StreamWriter: x.Value))
+                .ToArray()
+                .Where(x => x.Username != message.Username)
+                .Select(x => x.StreamWriter.WriteAsync(message)));
         }
 
         return Task.CompletedTask;

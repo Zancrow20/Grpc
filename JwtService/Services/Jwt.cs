@@ -1,4 +1,3 @@
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -10,7 +9,6 @@ namespace JwtService.Services;
 
 public class Jwt : OpenService.OpenServiceBase
 {
-    private readonly ILogger<Jwt> _logger;
     private readonly IConfiguration _config;
     private static List<User> Users = new()
     {
@@ -18,9 +16,8 @@ public class Jwt : OpenService.OpenServiceBase
         new User(){Username = "Artur",Password = "Yakupov"}
     };
 
-    public Jwt(ILogger<Jwt> logger, IConfiguration config)
+    public Jwt(IConfiguration config)
     {
-        _logger = logger;
         _config = config;
     }
 
