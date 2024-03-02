@@ -10,37 +10,26 @@ namespace JwtService.Services;
 [Authorize]
 public class ChatService : ChatServiceGrpc.ChatService.ChatServiceBase
 {
-    private static readonly ConcurrentDictionary<string, IServerStreamWriter<PublishedMessage>> _usernameToReceiveStreamMapping = new();
+    private static readonly ConcurrentDictionary<string, IServerStreamWriter<PublishedMessage>> _usernameToReceiveStreamMapping
+        = new();
 
 
-    public override Task<Empty> SendMessage(Message request, ServerCallContext context)
+    public override async Task<Empty> SendMessage(Message request, ServerCallContext context)
     {
-        //todo: client sends message
-        /*
-            var username = GetUserNameFromContext();
-            var ct = context.CancellationToken;
-            while (!ct.IsCancellationRequested)
-            {
-                await foreach (var message in requestStream.ReadAllAsync(ct))
-                {
-                    await SendMessageToAll(new ReceiveMessage() {Text = message.Text, Username = username});
-                }
-            
-            }
-        */
-        return base.SendMessage(request, context);
+        var username = GetUserNameFromContext(context);
+        var ct = context.CancellationToken;
+        if (!ct.IsCancellationRequested)
+            await SendMessageToAll(new PublishedMessage() {Text = request.Text, Username = username});   
+        
+        return new Empty();
     }
 
-    public override Task SubscribeMessages(Empty request, IServerStreamWriter<PublishedMessage> responseStream, ServerCallContext context)
+    public override async Task SubscribeMessages(Empty request, IServerStreamWriter<PublishedMessage> responseStream, ServerCallContext context)
     {
-        //todo: client subscribes topic (main chat)
-        /*
-           var username = GetUserNameFromContext();
-           await JoinChat(username!, responseStream);
-           await Task.FromCanceled(stopping token)
-           await LeaveChat(username)
-         */
-        return base.SubscribeMessages(request, responseStream, context);
+        var username = GetUserNameFromContext(context);
+        await JoinChat(username!, responseStream);
+        await Task.FromCanceled(context.CancellationToken);
+        await LeaveChat(username);
     }
 
     private async Task SendMessageToAll(PublishedMessage message)
@@ -60,6 +49,19 @@ public class ChatService : ChatServiceGrpc.ChatService.ChatServiceBase
         _usernameToReceiveStreamMapping.TryRemove(username, out _);
         return Task.CompletedTask;
     }
+    
+    private Task JoinChat(string username, IServerStreamWriter<PublishedMessage> responseStream)
+    {
+        if (!_usernameToReceiveStreamMapping.ContainsKey(username))
+        {
+            _usernameToReceiveStreamMapping.AddOrUpdate(username,
+                _ => responseStream,
+                (_, _) => responseStream);
+        }
 
-    private string GetUserNameFromContext(ServerCallContext context) => context.GetHttpContext().User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        return Task.CompletedTask;
+    }
+
+    private string GetUserNameFromContext(ServerCallContext context) 
+        => context.GetHttpContext().User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }
